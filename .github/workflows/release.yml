@@ -1,0 +1,39 @@
+name: release
+
+defaults:
+  run:
+    shell: bash
+
+on:
+  push:
+    tags:
+      - 'v*' # Push events to matching v*, i.e. v1.0, v20.15.10
+
+jobs:
+  release:
+    runs-on: ubuntu-20.04
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - uses: actions/setup-python@v2
+      with:
+        python-version: "3.8"
+
+    - name: Get the version
+      id: get_version
+      run: echo ::set-output name=VERSION::${GITHUB_REF/refs\/tags\/v/}
+
+    - name: Build the wheel
+      id: publish_to_pypi
+      run: |
+        python3 -m pip install --upgrade pip wheel twine
+        echo ${{ steps.get_version.outputs.VERSION }} > .version.txt
+        python3 setup.py sdist bdist_wheel
+
+    - name: Publish wheel to PyPI
+      id: publish_wheel_to_pypi
+      run: twine upload --non-interactive dist/*
+      env:
+        TWINE_USERNAME: __token__
+        TWINE_PASSWORD: ${{ secrets.PYPI_TOKEN }}

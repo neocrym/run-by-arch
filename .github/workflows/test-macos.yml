@@ -1,0 +1,44 @@
+name: test-macos
+
+defaults:
+  run:
+    shell: bash
+
+on: [push, pull_request]
+
+jobs:
+  test-macos:
+    runs-on: macos-10.15
+    strategy:
+      fail-fast: true
+      matrix:
+        python-version: [
+          "2.7",
+          "3.5",
+          "3.6",
+          "3.7",
+          "3.8",
+          "3.9",
+        ]
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Install Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Install Python build tools
+      run: python -m pip install wheel
+
+    - name: Install run-by-arch
+      run: python -m pip install .
+
+    - name: Create our target directory
+      run: |
+        mkdir -p run-by-arch/darwin-x86_64
+        cc test_fixtures/helloworld.c -o run-by-arch/darwin-x86_64/helloworld
+
+    - name: Check that run-by-arch can find helloworld
+      run: run-by-arch helloworld
